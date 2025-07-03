@@ -1,5 +1,5 @@
 const express = require('express');
-const Fingerprint = require('./FingerprintSchema');
+const Fingerprint = require('../models/FingerprintSchema');
 const {
   watermarkJson,
   detectWatermark,
@@ -8,11 +8,11 @@ const {
   tweakFloat,
   tweakString,
   tweakDate
-} = require('./watermarkUtils');
+} = require('../utils/watermarkUtils');
 const crypto = require('crypto');
 
 // POST /watermark/:companyId
-exports.watermark = async (req, res) => {
+const watermark = async (req, res) => {
   const { companyId } = req.params;
   const userData = req.body;
   let record = await Fingerprint.findOne({ companyId });
@@ -39,7 +39,7 @@ exports.watermark = async (req, res) => {
 };
 
 // POST /detect
-exports.detect = async (req, res) => {
+const detect = async (req, res) => {
   const suspects = Array.isArray(req.body) ? req.body : [req.body];
   const all = await Fingerprint.find();
   
@@ -258,4 +258,9 @@ exports.detect = async (req, res) => {
     })),
     DetailedAnalysis: filteredDetailedResults
   });
+};
+
+module.exports = {
+  watermark,
+  detect
 };

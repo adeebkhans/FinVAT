@@ -1,0 +1,195 @@
+{
+  "user_id": "abc123",
+  "full_name": "Aamir Khan",
+  "dob": "1992-03-14",
+  "gender": "Male",
+  "pan": "AKP1234B5C",
+  "aadhaar": "123456789012",
+  "address_history": [
+    {
+      "address_line1": "Flat No. 101, Green Apartments",
+      "address_line2": "MG Road",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "pincode": "400001",
+      "residence_type": "Owned",
+      "duration_months": 60
+    },
+    {
+      "address_line1": "House No. 5, Silver Enclave",
+      "address_line2": "Airport Road",
+      "city": "Delhi",
+      "state": "Delhi",
+      "pincode": "110001",
+      "residence_type": "Rented",
+      "duration_months": 24
+    }
+  ],
+  "contact_details": {
+    "mobile": "9876543210",
+    "email": "aamir.khan@example.com"
+  },
+  "employment_details": {
+    "employer_name": "TCS Ltd",
+    "employment_type": "Salaried",
+    "designation": "Software Engineer",
+    "years_of_experience": 8,
+    "monthly_income": 75000,
+    "income_frequency": "Monthly",
+    "income_verified": true
+  },
+  "income_tax_details": {
+    "filing_status": "Filed",
+    "latest_itr_acknowledgement_number": "ITRACK1234567890",
+    "last_filed_assessment_year": "2024-2025"
+  },
+  "bank_accounts": [
+    {
+      "bank_name": "HDFC Bank",
+      "account_type": "Savings",
+      "account_number_masked": "XXXXXX1234",
+      "opening_date": "2015-01-20",
+      "current_balance": 87234.45,
+      "last_updated": "2025-06-28",
+      "transactions_summary": {
+        "avg_monthly_debit": 35000,
+        "avg_monthly_credit": 75000,
+        "number_of_bounces_last_12_months": 0
+      }
+    },
+    {
+      "bank_name": "ICICI Bank",
+      "account_type": "Current",
+      "account_number_masked": "XXXXXX5678",
+      "opening_date": "2018-05-10",
+      "current_balance": 120000.00,
+      "last_updated": "2025-06-28"
+    }
+  ],
+  "credit_accounts": [
+    {
+      "account_id": "CRD123456",
+      "account_type": "Auto Loan",
+      "lender_name": "SBI",
+      "account_status": "Active",
+      "ownership_type": "Individual",
+      "loan_amount": 400000,
+      "sanctioned_date": "2023-01-15",
+      "disbursed_date": "2023-01-20",
+      "emi_amount": 8000,
+      "tenure_months": 60,
+      "repayment_frequency": "Monthly",
+      "current_outstanding_balance": 288000,
+      "last_payment_date": "2025-06-10",
+      "last_payment_amount": 8000,
+      "dpd_history_last_24_months": [
+        {"month": "2025-05", "dpd": 0},
+        {"month": "2025-04", "dpd": 0},
+        {"month": "2025-03", "dpd": 0},
+        {"month": "2025-02", "dpd": 0},
+        {"month": "2025-01", "dpd": 0},
+        {"month": "2024-12", "dpd": 0}
+      ],
+      "number_of_emis_paid": 29,
+      "number_of_emis_due": 31,
+      "write_off_status": false,
+      "settlement_status": false,
+      "collateral_type": "Vehicle",
+      "is_guarantor": false
+    },
+    {
+      "account_id": "CRD789012",
+      "account_type": "Credit Card",
+      "lender_name": "Axis Bank",
+      "account_status": "Active",
+      "ownership_type": "Individual",
+      "credit_limit": 150000,
+      "current_outstanding_balance": 45000,
+      "cash_limit": 30000,
+      "last_billed_amount": 45000,
+      "minimum_due_amount": 2250,
+      "due_date": "2025-07-05",
+      "payment_history_last_12_months": [
+        {"month": "2025-05", "payment_status": "Paid in Full"},
+        {"month": "2025-04", "payment_status": "Paid Minimum Due"},
+        {"month": "2025-03", "payment_status": "Paid in Full"}
+      ],
+      "utilisation_rate": 30.0,
+      "date_opened": "2020-11-01",
+      "date_closed": null,
+      "number_of_times_over_limit": 0
+    },
+    {
+      "account_id": "CRD345678",
+      "account_type": "Personal Loan",
+      "lender_name": "Bajaj Finserv",
+      "account_status": "Closed",
+      "ownership_type": "Individual",
+      "loan_amount": 200000,
+      "sanctioned_date": "2021-03-01",
+      "disbursed_date": "2021-03-05",
+      "emi_amount": 6500,
+      "tenure_months": 36,
+      "repayment_frequency": "Monthly",
+      "current_outstanding_balance": 0,
+      "last_payment_date": "2024-02-28",
+      "closure_date": "2024-02-28",
+      "dpd_history_last_24_months": [
+        {"month": "2024-01", "dpd": 0},
+        {"month": "2023-12", "dpd": 0}
+      ]
+    }
+  ],
+  "enquiries": [
+    {
+      "enquiry_date": "2025-05-10",
+      "lender_name": "HDFC Bank",
+      "product_type": "Personal Loan",
+      "enquiry_type": "Hard Pull"
+    },
+    {
+      "enquiry_date": "2025-04-01",
+      "lender_name": "SBI",
+      "product_type": "Home Loan",
+      "enquiry_type": "Hard Pull"
+    },
+    {
+      "enquiry_date": "2025-03-15",
+      "lender_name": "Credit Bazaar",
+      "product_type": "Credit Score Check",
+      "enquiry_type": "Soft Pull"
+    }
+  ],
+  "public_records": [
+    {
+      "record_type": "Suit Filed",
+      "date_filed": "2022-09-01",
+      "status": "Dismissed",
+      "details": "Small claims suit for property dispute."
+    }
+  ],
+  "guarantee_details": [
+    {
+      "guaranteed_account_id": "CRD987654",
+      "guaranteed_party_name": "Priya Sharma",
+      "guaranteed_account_type": "Home Loan",
+      "guaranteed_lender": "LIC Housing Finance",
+      "guarantee_amount": 500000
+    }
+  ],
+  "disputes": [
+    {
+      "dispute_id": "DISP001",
+      "account_id": "CRD789012",
+      "dispute_date": "2025-06-20",
+      "status": "In Progress",
+      "description": "Disputed an incorrect charge on credit card statement."
+    }
+  ],
+  "cibil_score_history": [
+    {"date": "2025-06-01", "score": 780},
+    {"date": "2025-03-01", "score": 775},
+    {"date": "2024-12-01", "score": 760}
+  ],
+  "fraud_alerts": []
+}
