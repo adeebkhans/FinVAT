@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const authRoutes = require('./authRoutes');
-const steganographyRoutes = require('./steganography');
+const steganographyRoutes = require('./steganographyRoutes');
 
 // Authentication routes
 router.use('/auth', authRoutes);
