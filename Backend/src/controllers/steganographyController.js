@@ -38,6 +38,31 @@ const watermark = async (req, res) => {
   res.json(modified);
 };
 
+// Exact copy of watermark endpoint but as function
+const watermarkUserData = async (userData, companyId) => {
+  let record = await Fingerprint.findOne({ companyId });
+  let watermarkSeed;
+  if (!record) {
+    watermarkSeed = crypto.randomUUID();
+  } else {
+    watermarkSeed = record.watermarkSeed;
+  }
+  const { modified, fingerprint, patternApplied } = watermarkJson(userData, watermarkSeed);
+  if (!record) {
+    await Fingerprint.create({
+      companyId,
+      watermarkSeed,
+      patternApplied,
+      fingerprintCode: fingerprint
+    });
+  } else {
+    record.patternApplied = patternApplied;
+    record.fingerprintCode = fingerprint;
+    await record.save();
+  }
+  return modified;
+};
+
 // POST /detect
 const detect = async (req, res) => {
   const suspects = Array.isArray(req.body) ? req.body : [req.body];
@@ -262,5 +287,6 @@ const detect = async (req, res) => {
 
 module.exports = {
   watermark,
-  detect
+  detect,
+  watermarkUserData
 };
