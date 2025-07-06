@@ -33,7 +33,7 @@ const UserDashboard = () => {
     const fetchUserProfile = async () => {
       try {
         const response = await authAPI.getProfile();
-        setUser(response.data.user);
+        setUser(response.data.data.user);
       } catch (error) {
         console.error('Failed to fetch profile:', error);
         navigate('/login');
