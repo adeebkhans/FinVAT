@@ -53,7 +53,7 @@ const AuthPage = () => {
       }
       if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
     }
-    
+
     if (!formData.password) newErrors.password = 'Password is required';
     else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
 
@@ -63,7 +63,7 @@ const AuthPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setLoading(true);
@@ -79,9 +79,9 @@ const AuthPage = () => {
         response = await authAPI.login({ login: formData.login, password: formData.password, role });
         const { token, user } = response.data.data;
         setAuthToken(token);
-        
+
         setSuccess('Login successful! Redirecting...');
-        
+
         // Redirect based on user role
         setTimeout(() => {
           if (user.role === 'admin') navigate('/admin-dashboard');
@@ -93,7 +93,7 @@ const AuthPage = () => {
         const userData = { username: formData.username, email: formData.email, password: formData.password, role };
         response = await authAPI.register(userData);
         setSuccess('Registration successful!');
-        
+
         // Redirect based on role after successful registration
         setTimeout(() => {
           if (!isAdmin) {
@@ -101,7 +101,7 @@ const AuthPage = () => {
             navigate('/user-details');
           } else {
             // Admin signup - go directly to login
-            navigate('/login');
+            navigate('/admin-dashboard');
             setFormData({ username: '', email: formData.email, login: formData.email, password: '', confirmPassword: '' });
           }
         }, 2000);
@@ -138,7 +138,7 @@ const AuthPage = () => {
       <div className="absolute inset-0 pointer-events-none bg-gray-900 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
       <div className="absolute top-[-20%] left-[-10%] w-[40%] h-[40%] bg-cyan-500/20 rounded-full filter blur-3xl animate-blob"></div>
       <div className="absolute bottom-[-20%] right-[-10%] w-[40%] h-[40%] bg-purple-500/20 rounded-full filter blur-3xl animate-blob animation-delay-2000"></div>
-      
+
       <header className="w-full p-6 flex justify-between items-center absolute top-0 left-0 z-10">
         <div className="flex items-center">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -150,7 +150,7 @@ const AuthPage = () => {
 
       <main className="flex-grow flex items-center justify-center w-full px-4 sm:px-6 lg:px-8 z-10 py-12">
         <div className="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-6 items-center">
-          
+
           <div className="w-full max-w-md mx-auto bg-gray-800/50 backdrop-blur-md p-8 rounded-2xl shadow-2xl border border-gray-700/50">
             {/* Role Toggle */}
             <div className="bg-gray-700/50 p-1 rounded-xl flex justify-around mb-5">
