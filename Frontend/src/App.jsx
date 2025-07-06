@@ -4,12 +4,12 @@ import AuthPage from './pages/authPage';
 import UserDetailsForm from './pages/userDetailsForm';
 import UserDashboard from './pages/userDashboard';
 import CibilScore from './pages/cibilScore';
+import AdminDashboard from './pages/adminDashboard'; // <-- Add this import
 import Navbar from './components/navbar';
 import './App.css';
 
 function AppContent() {
   const location = useLocation();
-  // Show Navbar only on dashboard and cibil-score
   const showNavbar = ['/dashboard', '/cibil-score'].includes(location.pathname);
 
   return (
@@ -27,7 +27,7 @@ function AppContent() {
         <Route path="/dashboard" element={<UserDashboard />} />
         {/* CIBIL Score Route */}
         <Route path="/cibil-score" element={<CibilScore />} />
-        <Route path="/admin-dashboard" element={<div>Admin Dashboard (Coming Soon)</div>} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} /> {/* <-- Updated */}
         
         {/* Default redirect to login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
