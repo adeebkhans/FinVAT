@@ -200,7 +200,13 @@ const updateProfile = async (req, res) => {
 const generateProfile = async (req, res) => {
   try {
     // Generate complete profile data with username as user_id
+    // and use the real email from the user object
     const profileData = generateCompleteUserProfile(req.user.username);
+
+    // Overwrite the generated email with the real user email
+    if (profileData.contact_details) {
+      profileData.contact_details.email = req.user.email;
+    }
 
     // Update user with generated profile
     const user = await User.findByIdAndUpdate(
