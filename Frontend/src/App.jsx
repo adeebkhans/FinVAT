@@ -10,7 +10,6 @@ function App() {
   return (
     <Router>
       <div className="App">
-        <Navbar />
         <Routes>
           {/* Auth Routes */}
           <Route path="/login" element={<AuthPage />} />
@@ -19,8 +18,16 @@ function App() {
           {/* User Details Route */}
           <Route path="/user-details" element={<UserDetailsForm />} />
           
-          {/* Dashboard Routes */}
-          <Route path="/dashboard" element={<UserDashboard />} />
+          {/* Dashboard Route with Navbar */}
+          <Route
+            path="/dashboard"
+            element={
+              <>
+                <Navbar />
+                <UserDashboard />
+              </>
+            }
+          />
           <Route path="/admin-dashboard" element={<div>Admin Dashboard (Coming Soon)</div>} />
           
           {/* Default redirect to login */}
