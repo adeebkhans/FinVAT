@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../api';
-import CibilScore from '../components/cibilScore';
+import CibilScore from './cibilScore';
 import { 
   CreditCardIcon, 
   BanknotesIcon as CashIcon, 
@@ -164,8 +164,11 @@ const UserDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white font-sans antialiased relative overflow-hidden">
+      {/* Blobs and grid background */}
       <div className="absolute top-0 left-0 w-full h-full bg-grid-gray-700/[0.2] z-0"></div>
       <div className="absolute inset-0 pointer-events-none bg-gray-900 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
+      <div className="absolute top-[-20%] left-[-10%] w-[40%] h-[40%] bg-cyan-500/20 rounded-full filter blur-3xl animate-blob"></div>
+      <div className="absolute bottom-[-20%] right-[-10%] w-[40%] h-[40%] bg-purple-500/20 rounded-full filter blur-3xl animate-blob animation-delay-2000"></div>
 
       <div className="relative z-10 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
         {/* Header */}
@@ -230,8 +233,8 @@ const UserDashboard = () => {
               icon={<ShieldCheckIcon className="w-6 h-6 text-white" />}
               title="CIBIL Score"
               subtitle={`Current: ${latestCibilScore?.score || 'N/A'}`}
-              onClick={() => setShowCibilScore(true)}
-              color="bg-green-500"
+              onClick={() => navigate('/cibil-score')}
+              color="bg-green-500 animate-pulse" 
             />
             <QuickActionCard
               icon={<CreditCardIcon className="w-6 h-6 text-white" />}
