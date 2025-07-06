@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; 
 import { cibilAPI } from '../api';
 import { 
   ShieldCheckIcon, 
   ClockIcon, 
-  ArrowTrendingUpIcon as TrendingUpIcon, // Updated name
+  ArrowTrendingUpIcon as TrendingUpIcon, 
   ShareIcon, 
   MagnifyingGlassIcon as SearchIcon, 
   ExclamationCircleIcon, 
@@ -12,8 +13,8 @@ import {
 
 const ScoreGauge = ({ score }) => {
     const scorePercentage = Math.max(0, (score - 300) / 6); // CIBIL score is 300-900
-    const radius = 70;
-    const stroke = 10;
+    const radius = 90; 
+    const stroke = 12;
     const normalizedRadius = radius - stroke * 2;
     const circumference = normalizedRadius * 2 * Math.PI;
     const strokeDashoffset = circumference - (scorePercentage / 100) * circumference;
@@ -36,7 +37,7 @@ const ScoreGauge = ({ score }) => {
                 className="transform -rotate-90"
             >
                 <circle
-                    stroke="#374151" // gray-700
+                    stroke="#374151"
                     fill="transparent"
                     strokeWidth={stroke}
                     r={normalizedRadius}
@@ -57,10 +58,23 @@ const ScoreGauge = ({ score }) => {
                 />
             </svg>
             <div className="absolute flex flex-col items-center justify-center">
-                <span className={`text-5xl font-bold ${color}`}>{score}</span>
-                <span className="text-lg font-semibold text-gray-300">{range}</span>
+                <span className={`text-4xl font-extrabold ${color}`}>{score}</span>
+                <span className="text-xl font-semibold text-gray-300">{range}</span>
             </div>
         </div>
+    );
+};
+
+// Improved Impact Badge
+const ImpactBadge = ({ impact }) => {
+    let badgeColor = "bg-green-500/20 m-2 text-green-400 text-center border-green-400";
+    if (impact.toLowerCase().includes("medium")) badgeColor = "bg-yellow-500/20 m-2 text-center text-yellow-400 border-yellow-400";
+    if (impact.toLowerCase().includes("low")) badgeColor = "bg-gray-500/20 m-2 text-center text-gray-300 border-gray-400";
+    if (impact.toLowerCase().includes("very")) badgeColor = "bg-red-500/20 m-2 text-center text-red-400 border-red-400";
+    return (
+        <span className={`text-xs font-bold px-3 py-1 rounded-full border ${badgeColor}`}>
+            {impact}
+        </span>
     );
 };
 
@@ -71,11 +85,11 @@ const AnalysisCard = ({ icon, title, impact, description, progress, color }) => 
                 <div className={`p-2 bg-gray-700/60 rounded-lg ${color}`}>{icon}</div>
                 <h3 className="font-semibold text-white">{title}</h3>
             </div>
-            <span className={`text-xs font-bold px-2 py-1 rounded-full ${color === 'text-green-400' ? 'bg-green-500/20' : 'bg-yellow-500/20'}`}>{impact}</span>
+            <ImpactBadge impact={impact} />
         </div>
         <p className="text-sm text-gray-400">{description}</p>
         <div className="w-full bg-gray-700 rounded-full h-2">
-            <div className={`h-2 rounded-full ${color === 'text-green-400' ? 'bg-green-400' : 'bg-yellow-400'}`} style={{ width: `${progress}%` }}></div>
+            <div className={`h-2 rounded-full ${color === 'text-green-400' ? 'bg-green-400' : color === 'text-yellow-400' ? 'bg-yellow-400' : 'bg-gray-400'}`} style={{ width: `${progress}%` }}></div>
         </div>
     </div>
 );
@@ -84,24 +98,14 @@ const CibilScore = () => {
     const [cibilData, setCibilData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const navigate = useNavigate(); 
 
     useEffect(() => {
         const fetchScore = async () => {
             try {
                 setLoading(true);
                 const response = await cibilAPI.simulateScore();
-                
-                // Override score and range for design purposes as requested
-                const designedData = {
-                    ...response.data,
-                    data: {
-                        ...response.data.data,
-                        cibil_score: 760,
-                        score_range: "Good",
-                    }
-                };
-                setCibilData(designedData);
-
+                setCibilData(response.data); // <-- Use real API data, do not override
             } catch (err) {
                 setError(err.response?.data?.message || 'Failed to fetch CIBIL score.');
             } finally {
@@ -127,14 +131,29 @@ const CibilScore = () => {
 
     if (!cibilData) return null;
 
-    const { data, simulation_info } = cibilData;
+    const data = cibilData.data;
+    console.log("CIBIL Data:", data);
+    const simulation_info = {
+      company_shared_with: cibilData.company_used,
+      timestamp: cibilData.report_date, // or another field if you have a real timestamp
+    };
 
     return (
         <div className="min-h-screen bg-gray-900 text-white font-sans antialiased relative overflow-hidden p-4 sm:p-6 lg:p-8">
             <div className="absolute top-0 left-0 w-full h-full bg-grid-gray-700/[0.2] z-0"></div>
             <div className="absolute inset-0 pointer-events-none bg-gray-900 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
 
-            <main className="max-w-5xl mx-auto z-10 relative">
+            <main className="max-w-5xl mx-auto mt-10 z-10 relative">
+                {/* Back Button */}
+                <button
+                    onClick={() => navigate(-1)}
+                    className="mb-6 flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-cyan-400 font-semibold transition-all"
+                >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Back
+                </button>
                 <header className="mb-8">
                     <h1 className="text-3xl font-bold text-white">Credit Score Analysis</h1>
                     <p className="text-gray-400 mt-1">Hello, {data.full_name}. Here's your detailed CIBIL report.</p>
@@ -179,8 +198,23 @@ const CibilScore = () => {
                 </div>
 
                 <footer className="mt-8 text-center text-xs text-gray-500 border-t border-gray-700/50 pt-4">
-                    <p>Data watermarked and securely shared with {simulation_info.company_shared_with} on {new Date(simulation_info.timestamp).toLocaleDateString()}.</p>
-                    <p>Report Date: {new Date(data.report_date).toLocaleDateString()} | Next Update: {new Date(data.next_update_date).toLocaleDateString()}</p>
+                  {simulation_info && simulation_info.company_shared_with ? (
+                    <>
+                      <p>
+                        Data watermarked and securely shared with {simulation_info.company_shared_with}
+                        {simulation_info.timestamp && (
+                          <> on {new Date(simulation_info.timestamp).toLocaleDateString()}.</>
+                        )}
+                      </p>
+                      <p>
+                        Report Date: {new Date(data.report_date).toLocaleDateString()} | Next Update: {new Date(data.next_update_date).toLocaleDateString()}
+                      </p>
+                    </>
+                  ) : (
+                    <p>
+                      Report Date: {new Date(data.report_date).toLocaleDateString()} | Next Update: {new Date(data.next_update_date).toLocaleDateString()}
+                    </p>
+                  )}
                 </footer>
             </main>
         </div>
