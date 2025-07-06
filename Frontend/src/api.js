@@ -107,12 +107,12 @@ export const cibilAPI = {
 export const adminAPI = {
   // Get dashboard statistics
   getDashboardStats: () => {
-    return api.get('/bait/dashboard-stats');
+    return api.get('/admin/dashboard-stats');
   },
 
   // Leak data for a specific company (returns downloadable JSON)
   leakData: (company) => {
-    return api.get(`/bait/leak/${company}`, {
+    return api.get(`/admin/leak/${company}`, {
       responseType: 'blob', // For file download
     });
   }
