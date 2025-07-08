@@ -94,27 +94,99 @@ const AnalysisCard = ({ icon, title, impact, description, progress, color }) => 
     </div>
 );
 
+const ConsentPopup = ({ onConsent, onCancel, sampleData }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+    <div className="bg-gray-900 rounded-2xl shadow-2xl p-8 max-w-lg w-full border border-cyan-700/40">
+      <h2 className="text-2xl font-bold text-cyan-400 mb-4">Consent Required</h2>
+      <p className="text-gray-300 mb-4">
+        To calculate your CIBIL score, the following details will be securely shared and analyzed:
+      </p>
+      <ul className="text-sm text-gray-200 mb-4 list-disc list-inside space-y-1">
+        <li><span className="text-cyan-300 font-semibold">Personal Info:</span> Name, DOB, PAN, Aadhaar</li>
+        <li><span className="text-cyan-300 font-semibold">Address & Contact:</span> Address history, mobile, email</li>
+        <li><span className="text-cyan-300 font-semibold">Employment:</span> Employer, designation, income</li>
+        <li><span className="text-cyan-300 font-semibold">Bank & Credit:</span> Bank accounts, credit/loan accounts, credit card usage</li>
+        <li><span className="text-cyan-300 font-semibold">History:</span> Repayment, EMI, ITR, CIBIL score history</li>
+        <li><span className="text-cyan-300 font-semibold">Other:</span> Enquiries, public records, disputes, guarantees</li>
+      </ul>
+      <details className="mb-4">
+        <summary className="cursor-pointer text-cyan-400 underline">See Example Data</summary>
+        <pre className="bg-gray-800 rounded p-2 mt-2 text-xs text-gray-300 max-h-40 overflow-auto">
+          {JSON.stringify(sampleData, null, 2)}
+        </pre>
+      </details>
+      <div className="flex justify-end gap-4">
+        <button
+          onClick={onCancel}
+          className="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={onConsent}
+          className="px-6 py-2 rounded-lg bg-cyan-500 text-white font-bold hover:bg-cyan-600 transition"
+        >
+          I Consent & Continue
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+const sampleData = {
+  "full_name": "Aamir Khan",
+  "dob": "1992-03-14",
+  "pan": "AKP1234B5C",
+  "aadhaar": "123456789012",
+  "address_history": [
+    { "address_line1": "Flat No. 101, Green Apartments", "city": "Mumbai", "state": "Maharashtra", "pincode": "400001" }
+  ],
+  "contact_details": { "mobile": "9876543210", "email": "aamir.khan@example.com" },
+  "employment_details": { "employer_name": "TCS Ltd", "designation": "Software Engineer", "monthly_income": 75000 },
+  "bank_accounts": [
+    { "bank_name": "HDFC Bank", "current_balance": 87234.45 }
+  ],
+  "credit_accounts": [
+    { "account_type": "Credit Card", "lender_name": "Axis Bank", "credit_limit": 150000, "current_outstanding_balance": 45000 }
+  ],
+  "cibil_score_history": [
+    { "date": "2025-06-01", "score": 780 }
+  ]
+};
+
 const CibilScore = () => {
     const [cibilData, setCibilData] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [showConsent, setShowConsent] = useState(true);
     const navigate = useNavigate(); 
 
     useEffect(() => {
-        const fetchScore = async () => {
-            try {
-                setLoading(true);
-                const response = await cibilAPI.simulateScore();
-                setCibilData(response.data); // <-- Use real API data, do not override
-            } catch (err) {
-                setError(err.response?.data?.message || 'Failed to fetch CIBIL score.');
-            } finally {
-                setLoading(false);
-            }
-        };
+        if (!showConsent) {
+            const fetchScore = async () => {
+                try {
+                    setLoading(true);
+                    const response = await cibilAPI.simulateScore();
+                    setCibilData(response.data);
+                } catch (err) {
+                    setError(err.response?.data?.message || 'Failed to fetch CIBIL score.');
+                } finally {
+                    setLoading(false);
+                }
+            };
+            fetchScore();
+        }
+    }, [showConsent]);
 
-        fetchScore();
-    }, []);
+    if (showConsent) {
+        return (
+            <ConsentPopup
+                onConsent={() => setShowConsent(false)}
+                onCancel={() => navigate(-1)}
+                sampleData={sampleData}
+            />
+        );
+    }
 
     if (loading) {
         return (
@@ -132,10 +204,9 @@ const CibilScore = () => {
     if (!cibilData) return null;
 
     const data = cibilData.data;
-    console.log("CIBIL Data:", data);
     const simulation_info = {
       company_shared_with: cibilData.company_used,
-      timestamp: cibilData.report_date, // or another field if you have a real timestamp
+      timestamp: cibilData.report_date,
     };
 
     return (
@@ -175,7 +246,7 @@ const CibilScore = () => {
 
                     <div className="lg:col-span-2 flex flex-col gap-6">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <AnalysisCard icon={<TrendingUpIcon className="h-6 w-6" />} title="Payments" impact="High Impact" description="99% on-time payments." progress={99} color="text-green-400" />
+                            <AnalysisCard icon={<TrendingUpIcon className="h-6 w-6" />} title="Payments" impact="High Impact" description="89% on-time payments." progress={89} color="text-green-400" />
                             <AnalysisCard icon={<ShieldCheckIcon className="h-6 w-6" />} title="Limit" impact="High Impact" description="25% credit utilization." progress={75} color="text-green-400" />
                             <AnalysisCard icon={<ClockIcon className="h-6 w-6" />} title="Age" impact="Medium Impact" description="4 years of credit history." progress={60} color="text-yellow-400" />
                         </div>
