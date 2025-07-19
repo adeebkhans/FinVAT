@@ -94,16 +94,20 @@ const AuthPage = () => {
         response = await authAPI.register(userData);
         setSuccess('Registration successful!');
 
+        // Save token if returned by backend
+        const token = response.data?.data?.token;
+        if (token) {
+            setAuthToken(token);
+        }
+
         // Redirect based on role after successful registration
         setTimeout(() => {
-          if (!isAdmin) {
-            // User signup - go to user details page
-            navigate('/user-details');
-          } else {
-            // Admin signup - go directly to login
-            navigate('/admin-dashboard');
-            setFormData({ username: '', email: formData.email, login: formData.email, password: '', confirmPassword: '' });
-          }
+            if (!isAdmin) {
+                navigate('/user-details');
+            } else {
+                navigate('/admin-dashboard');
+                setFormData({ username: '', email: formData.email, login: formData.email, password: '', confirmPassword: '' });
+            }
         }, 2000);
       }
     } catch (error) {
