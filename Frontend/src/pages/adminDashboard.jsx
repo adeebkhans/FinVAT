@@ -239,39 +239,43 @@ const AdminDashboard = () => {
                             <div>
                                 <h4 className="text-md font-semibold text-white mb-2">Detailed Suspect Analysis</h4>
                                 <div className="space-y-4">
-                                    {detectResult.DetailedAnalysis.map((suspect, idx) => {
-                                        const match = suspect.companyMatches[detectResult.BestMatchCompanyId];
-                                        return (
-                                            <div key={idx} className="bg-gray-900/60 rounded-lg p-4 border border-gray-700/40">
-                                                <div className="flex flex-wrap items-center gap-4 mb-2">
-                                                    <span className="font-bold text-cyan-300">Suspect #{suspect.suspectIndex + 1}</span>
-                                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${match && match.confidence === "100.00%" ? 'bg-green-700/40 text-green-300' : match && match.confidence > "0.00%" ? 'bg-yellow-700/40 text-yellow-300' : 'bg-gray-700/40 text-gray-300'}`}>
-                                                        Confidence: {match ? match.confidence : "0.00%"}
-                                                    </span>
-                                                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-cyan-700/40 text-cyan-200">
-                                                        Score: {match ? match.score : 0}
-                                                    </span>
-                                                    {suspect.bestMatch && (
-                                                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-700/40 text-purple-200">
-                                                            Best Match: {suspect.bestMatch}
+                                    {(detectResult.DetailedAnalysis && Array.isArray(detectResult.DetailedAnalysis)) ? (
+                                        detectResult.DetailedAnalysis.map((suspect, idx) => {
+                                            const match = suspect.companyMatches[detectResult.BestMatchCompanyId];
+                                            return (
+                                                <div key={idx} className="bg-gray-900/60 rounded-lg p-4 border border-gray-700/40">
+                                                    <div className="flex flex-wrap items-center gap-4 mb-2">
+                                                        <span className="font-bold text-cyan-300">Suspect #{suspect.suspectIndex + 1}</span>
+                                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${match && match.confidence === "100.00%" ? 'bg-green-700/40 text-green-300' : match && match.confidence > "0.00%" ? 'bg-yellow-700/40 text-yellow-300' : 'bg-gray-700/40 text-gray-300'}`}>
+                                                            Confidence: {match ? match.confidence : "0.00%"}
                                                         </span>
+                                                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-cyan-700/40 text-cyan-200">
+                                                            Score: {match ? match.score : 0}
+                                                        </span>
+                                                        {suspect.bestMatch && (
+                                                            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-700/40 text-purple-200">
+                                                                Best Match: {suspect.bestMatch}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {match && match.matchedFields && match.matchedFields.length > 0 ? (
+                                                        <div className="mt-2">
+                                                            <span className="text-sm text-gray-300">Matched Fields:</span>
+                                                            <ul className="list-disc list-inside text-sm text-green-300 mt-1">
+                                                                {match.matchedFields.map((field, i) => (
+                                                                    <li key={i}>{field}</li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-sm text-gray-400 mt-2">No significant matches for this suspect.</div>
                                                     )}
                                                 </div>
-                                                {match && match.matchedFields && match.matchedFields.length > 0 ? (
-                                                    <div className="mt-2">
-                                                        <span className="text-sm text-gray-300">Matched Fields:</span>
-                                                        <ul className="list-disc list-inside text-sm text-green-300 mt-1">
-                                                            {match.matchedFields.map((field, i) => (
-                                                                <li key={i}>{field}</li>
-                                                            ))}
-                                                        </ul>
-                                                    </div>
-                                                ) : (
-                                                    <div className="text-sm text-gray-400 mt-2">No significant matches for this suspect.</div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="text-gray-400">No detailed analysis available.</div>
+                                    )}
                                 </div>
                             </div>
                         </div>
