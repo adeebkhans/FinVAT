@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: finvat-canara-bank-surakshathon-backend
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8080
+    autoDeploy: true
+    plan: starter
+    repo: https://github.com/Gous0786/FinVAT
+    branch: main
+    rootDir: Backend
