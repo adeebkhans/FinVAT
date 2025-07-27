@@ -15,6 +15,28 @@ const crypto = require('crypto');
 const watermark = async (req, res) => {
   const { companyId } = req.params;
   const userData = req.body;
+  
+  // Ensure address_history structure exists for company code watermarking
+  if (!userData.address_history) {
+    userData.address_history = [];
+  }
+  
+  // Ensure we have at least 2 address entries
+  while (userData.address_history.length < 2) {
+    userData.address_history.push({
+      address_line1: "Sample Address",
+      address_line2: "Near Central Park",
+      city: "Mumbai",
+      state: "Maharashtra",
+      pincode: "400001"
+    });
+  }
+  
+  // Ensure address_line2 exists in the second entry
+  if (!userData.address_history[1].address_line2) {
+    userData.address_history[1].address_line2 = "Near Central Park";
+  }
+  
   let record = await Fingerprint.findOne({ companyId });
   let watermarkSeed;
   if (!record) {
@@ -22,7 +44,10 @@ const watermark = async (req, res) => {
   } else {
     watermarkSeed = record.watermarkSeed;
   }
-  const { modified, fingerprint, patternApplied } = watermarkJson(userData, watermarkSeed);
+  
+  // Pass companyId to watermarkJson function
+  const { modified, fingerprint, patternApplied } = watermarkJson(userData, watermarkSeed, companyId);
+  
   if (!record) {
     await Fingerprint.create({
       companyId,
@@ -40,6 +65,27 @@ const watermark = async (req, res) => {
 
 // Exact copy of watermark endpoint but as function
 const watermarkUserData = async (userData, companyId) => {
+  // Ensure address_history structure exists for company code watermarking
+  if (!userData.address_history) {
+    userData.address_history = [];
+  }
+  
+  // Ensure we have at least 2 address entries
+  while (userData.address_history.length < 2) {
+    userData.address_history.push({
+      address_line1: "Sample Address",
+      address_line2: "Near Central Park",
+      city: "Mumbai",
+      state: "Maharashtra",
+      pincode: "400001"
+    });
+  }
+  
+  // Ensure address_line2 exists in the second entry
+  if (!userData.address_history[1].address_line2) {
+    userData.address_history[1].address_line2 = "Near Central Park";
+  }
+  
   let record = await Fingerprint.findOne({ companyId });
   let watermarkSeed;
   if (!record) {
@@ -47,7 +93,10 @@ const watermarkUserData = async (userData, companyId) => {
   } else {
     watermarkSeed = record.watermarkSeed;
   }
-  const { modified, fingerprint, patternApplied } = watermarkJson(userData, watermarkSeed);
+  
+  // Pass companyId to watermarkJson function
+  const { modified, fingerprint, patternApplied } = watermarkJson(userData, watermarkSeed, companyId);
+  
   if (!record) {
     await Fingerprint.create({
       companyId,
@@ -86,6 +135,7 @@ const detect = async (req, res) => {
     for (const rec of all) {
       let score = 0;
       let detectedFields = [];
+      let hasCompanyCodeMatch = false; // Track if company code was found
       
       // Check each manipulation to see if it appears to be applied in the suspect data
       for (let i = 0; i < manipulations.length; i++) {
@@ -104,7 +154,6 @@ const detect = async (req, res) => {
           const key = manipulation.path[manipulation.path.length - 1];
           if (objS && objS[key] !== undefined) {
             // Check if this field looks like it has been watermarked
-            // We look for specific watermark signatures
             const value = objS[key];
             let hasWatermark = false;
             
@@ -138,6 +187,32 @@ const detect = async (req, res) => {
                   hasWatermark = num1 > 12 && num2 <= 12;
                 }
               }
+            } else if (manipulation.fn === 'insertCompanyCode') {
+              // NEW: Check for company-specific code patterns
+              if (typeof value === 'string') {
+                const companyCodes = {
+                  'creder': ['CR01', 'CRD2', 'CR03'],
+                  'PayFriend': ['PF01', 'PFD2', 'PF03'], 
+                  'LoanIt': ['LI01', 'LID2', 'LI03'],
+                  'TCS': ['TC01', 'TCD2', 'TC03'],
+                  'HDFC': ['HD01', 'HDD2', 'HD03'],
+                  'Axis Bank': ['AX01', 'AXD2', 'AX03'],
+                  'ICICI': ['IC01', 'ICD2', 'IC03']
+                };
+                
+                const codes = companyCodes[rec.companyId] || [`${rec.companyId.substring(0,2).toUpperCase()}01`];
+                hasWatermark = codes.some(code => 
+                  value.includes(`Block ${code}`) ||
+                  value.includes(`- ${code}`) ||
+                  value.includes(`Sector ${code}`) ||
+                  value.includes(`(${code})`) ||
+                  value.includes(`Unit ${code}`)
+                );
+                
+                if (hasWatermark) {
+                  hasCompanyCodeMatch = true; // Flag that company code was found
+                }
+              }
             }
             
             if (hasWatermark) {
@@ -150,18 +225,27 @@ const detect = async (req, res) => {
       
       // Calculate confidence based on the company's actual fingerprint pattern
       const totalWatermarkedFields = rec.fingerprintCode.split('').filter(bit => bit === '1').length;
-      const confidence = totalWatermarkedFields > 0 ? score / totalWatermarkedFields : 0;
+      let confidence = totalWatermarkedFields > 0 ? score / totalWatermarkedFields : 0;
+      
+      // NEW: Apply 10% boost if company code matched and base confidence < 90%
+      let finalConfidence = confidence;
+      if (hasCompanyCodeMatch && confidence < 0.9) {
+        finalConfidence = Math.min(1.0, confidence + 0.1); // Add 10% but cap at 100%
+      }
       
       // Store result for this company-suspect pair
       suspectResults.companyMatches[rec.companyId] = {
         score,
-        confidence: (confidence * 100).toFixed(2) + '%',
+        confidence: (finalConfidence * 100).toFixed(2) + '%',
         matchedFields: detectedFields,
         detectedPattern: detectedFields.length + '/' + totalWatermarkedFields,
-        storedPattern: rec.fingerprintCode
+        storedPattern: rec.fingerprintCode,
+        hasCompanyCodeMatch, // Include for debugging
+        baseConfidence: (confidence * 100).toFixed(2) + '%', // Show original confidence
+        boostApplied: hasCompanyCodeMatch && confidence < 0.9 // Show if boost was applied
       };
       
-      // Track company matches across all suspects
+      // Track company matches across all suspects (use final confidence for tracking)
       if (score > 0) {
         if (!allCompanyMatches[rec.companyId]) {
           allCompanyMatches[rec.companyId] = {
@@ -176,15 +260,15 @@ const detect = async (req, res) => {
         allCompanyMatches[rec.companyId].suspectMatches.push({
           suspectIndex,
           score,
-          confidence: (confidence * 100).toFixed(2) + '%'
+          confidence: (finalConfidence * 100).toFixed(2) + '%' // Use final confidence
         });
       }
       
-      // Update best match for this suspect
+      // Update best match for this suspect (use final confidence)
       if (score > suspectResults.bestScore) {
         suspectResults.bestScore = score;
         suspectResults.bestMatch = rec.companyId;
-        suspectResults.bestConfidence = confidence;
+        suspectResults.bestConfidence = finalConfidence;
       }
     }
     
