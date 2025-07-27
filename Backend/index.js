@@ -4,6 +4,9 @@ const cors = require('cors');
 const { connectDB } = require('./src/config/database');
 const routes = require('./src/routes');
 
+// Import keep-alive service
+require('./src/config/renderKeepAlive');
+
 const app = express();
 
 // Middleware
@@ -13,6 +16,15 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Database connection
 connectDB();
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Server is healthy',
+    timestamp: new Date().toISOString()
+  });
+});
 
 // Routes
 app.use('/api/v1', routes);
