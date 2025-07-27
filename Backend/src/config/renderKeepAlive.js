@@ -8,14 +8,14 @@ const URLs = process.env.KEEP_ALIVE_URLS
   : [];
 
 const CronExpression = {
-  EVERY_14_MINUTES: '0 */14 * * * *',
+  EVERY_9_MINUTES: '0 */9 * * * *',
 };
 
 // Only run keep-alive in production
 if (process.env.NODE_ENV === 'production' && URLs.length > 0) {
   console.log('Keep-alive service started for URLs:', URLs);
   
-  cron.schedule(CronExpression.EVERY_14_MINUTES, async () => {
+  cron.schedule(CronExpression.EVERY_9_MINUTES, async () => {
     console.log('Running keep-alive check...');
     await Promise.all(URLs.map((url) => getHealth(url)));
   });
