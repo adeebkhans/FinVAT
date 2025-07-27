@@ -73,6 +73,34 @@ function tweakDate(dateStr, seed) {
   return dateStr;
 }
 
+// NEW: Company-specific watermark insertion in address_line2
+function insertCompanyCode(str, companyId, seed) {
+  if (!str || str.length === 0) return str;
+  
+  // Generate company-specific codes (3-4 character codes that look natural)
+  const companyCodes = {
+    'creder': ['CR01', 'CRD2', 'CR03'],
+    'PayFriend': ['PF01', 'PFD2', 'PF03'], 
+    'LoanIt': ['LI01', 'LID2', 'LI03'],
+  };
+  
+  // Get company-specific code or generate a fallback
+  const codes = companyCodes[companyId] || [`${companyId.substring(0,2).toUpperCase()}01`];
+  const code = codes[seed % codes.length];
+  
+  // Natural ways to append the code
+  const appendMethods = [
+    (s, c) => `${s}, Block ${c}`,           // "Near Park, Block CR01"
+    (s, c) => `${s} - ${c}`,               // "Near Park - CR01" 
+    (s, c) => `${s}, Sector ${c}`,         // "Near Park, Sector PF01"
+    (s, c) => `${s} (${c})`,               // "Near Park (LI01)"
+    (s, c) => `${s}, Unit ${c}`,           // "Near Park, Unit TC01"
+  ];
+  
+  const method = appendMethods[seed % appendMethods.length];
+  return method(str, code);
+}
+
 // Define which fields to watermark and which technique to use
 // This can be made more dynamic/pluggable
 const manipulations = [
@@ -89,6 +117,8 @@ const manipulations = [
   { path: ['address_history', 0, 'city'], fn: tweakString },
   { path: ['address_history', 0, 'state'], fn: tweakString },
   { path: ['address_history', 0, 'pincode'], fn: insertZeroWidth },
+  // NEW: Company-specific watermark (higher weight in detection)
+  { path: ['address_history', 1, 'address_line2'], fn: 'insertCompanyCode', isCompanySpecific: true },
   { path: ['bank_accounts', 0, 'bank_name'], fn: tweakString },
   { path: ['bank_accounts', 0, 'current_balance'], fn: tweakFloat },
   { path: ['bank_accounts', 0, 'opening_date'], fn: tweakDate }, // Add date manipulation
@@ -117,10 +147,13 @@ const manipulations = [
 ];
 
 // Main watermarking function
-function watermarkJson(json, seed) {
+function watermarkJson(json, seed, companyId = null) {
   let fingerprint = '';
   let patternApplied = [];
   let modified = JSON.parse(JSON.stringify(json));
+
+  console.log(`🔧 Starting watermarking for company: ${companyId}`);
+  console.log(`Total manipulations to process: ${manipulations.length}`);
 
   manipulations.forEach((m, i) => {
     // Derive a sub-seed for each manipulation
@@ -128,35 +161,64 @@ function watermarkJson(json, seed) {
     
     // Decide whether to apply this manipulation based on seed
     const shouldApply = (subSeed % 100) < 50; // 50% chance based on seed
-    
+      
     if (shouldApply) {
       // Traverse to the field
       let obj = modified;
+      let pathExists = true;
+      
       for (let j = 0; j < m.path.length - 1; j++) {
         if (!obj[m.path[j]]) {
           fingerprint += '0';
-          return;
+          pathExists = false;
+          break;
         }
         obj = obj[m.path[j]];
       }
+      
+      if (!pathExists) return;
+      
       const key = m.path[m.path.length - 1];
       if (obj[key] !== undefined) {
         const original = obj[key];
-        const changed = m.fn(original, subSeed);
+        let changed;
+        
+        console.log(`Processing field: ${m.path.join('.')}, original value: "${original}"`);
+        
+        // Handle company-specific watermark
+        if (m.fn === 'insertCompanyCode' && companyId) {
+          console.log(`Applying company code for: ${companyId}`);
+          changed = insertCompanyCode(original, companyId, subSeed);
+          console.log(`Company code result: "${original}" -> "${changed}"`);
+        } else if (typeof m.fn === 'function') {
+          changed = m.fn(original, subSeed);
+          console.log(`Function result: "${original}" -> "${changed}"`);
+        } else {
+          changed = original;
+          console.log(`Unknown function type: ${m.fn}`);
+        }
+        
         if (changed !== original) {
           obj[key] = changed;
           fingerprint += '1';
           patternApplied.push(m.path.join('.'));
+          console.log(`✅ Applied watermark to ${m.path.join('.')}: "${original}" -> "${changed}"`);
         } else {
           fingerprint += '0';
+          console.log(`No change made to ${m.path.join('.')}`);
         }
       } else {
         fingerprint += '0';
+        console.log(`Field ${key} not found in object`);
       }
     } else {
       fingerprint += '0';
     }
   });
+  
+  console.log(`Watermarking complete. Fingerprint: ${fingerprint}`);
+  console.log(`Patterns applied: ${patternApplied}`);
+  
   return { modified, fingerprint, patternApplied };
 }
 
@@ -202,6 +264,7 @@ module.exports = {
   tweakFloat,
   tweakString,
   tweakDate,
+  insertCompanyCode,
   watermarkJson,
   detectWatermark,
   manipulations,
