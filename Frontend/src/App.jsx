@@ -4,7 +4,8 @@ import AuthPage from './pages/authPage';
 import UserDetailsForm from './pages/userDetailsForm';
 import UserDashboard from './pages/userDashboard';
 import CibilScore from './pages/cibilScore';
-import AdminDashboard from './pages/adminDashboard'; // <-- Add this import
+import AdminDashboard from './pages/adminDashboard';
+import OnfidoPage from './pages/onfidoPage'; 
 import Navbar from './components/navbar';
 import './App.css';
 
@@ -25,9 +26,15 @@ function AppContent() {
         
         {/* Dashboard Route */}
         <Route path="/dashboard" element={<UserDashboard />} />
+        
         {/* CIBIL Score Route */}
         <Route path="/cibil-score" element={<CibilScore />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />} /> {/* <-- Updated */}
+        
+        {/* Onfido Verification Route */}
+        <Route path="/onfido" element={<OnfidoPage />} />
+        
+        {/* Admin Dashboard Route */}
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
         
         {/* Default redirect to login */}
         <Route path="/" element={<Navigate to="/login" replace />} />

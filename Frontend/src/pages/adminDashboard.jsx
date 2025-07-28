@@ -10,6 +10,12 @@ const AdminDashboard = () => {
     const [detectResult, setDetectResult] = useState(null);
     const [detectLoading, setDetectLoading] = useState(false);
     const [detectError, setDetectError] = useState('');
+    
+    // New state for image steganography detection
+    const [imageDownloading, setImageDownloading] = useState(false);
+    const [imageDetectResult, setImageDetectResult] = useState(null);
+    const [imageDetectLoading, setImageDetectLoading] = useState(false);
+    const [imageDetectError, setImageDetectError] = useState('');
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -58,8 +64,74 @@ const AdminDashboard = () => {
         }
     };
 
+    // Handle downloading latest steganographic image
+    const handleDownloadImage = async () => {
+        setImageDownloading(true);
+        try {
+            const response = await steganographyAPI.getLatestImage();
+            
+            // Create blob from response
+            const blob = new Blob([response.data], { type: 'image/png' });
+            const url = window.URL.createObjectURL(blob);
+            
+            // Get filename from headers or use default
+            const contentDisposition = response.headers['content-disposition'];
+            let filename = 'latest_steganographic_image.png';
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                if (filenameMatch) {
+                    filename = filenameMatch[1];
+                }
+            }
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            
+            // Clean up
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(link);
+            
+        } catch (err) {
+            console.error('Failed to download image:', err);
+        } finally {
+            setImageDownloading(false);
+        }
+    };
+
+    // Handle image upload for steganography detection
+    const handleImageDetectUpload = async (e) => {
+        setImageDetectResult(null);
+        setImageDetectError('');
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        // Check if file is an image
+        if (!file.type.startsWith('image/')) {
+            setImageDetectError('Please upload an image file.');
+            return;
+        }
+        
+        setImageDetectLoading(true);
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+            
+            const res = await steganographyAPI.detectImageSteganography(formData);
+            setImageDetectResult(res.data);
+        } catch (err) {
+            setImageDetectError('Failed to detect steganography in uploaded image.');
+        } finally {
+            setImageDetectLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-900 text-white font-sans antialiased relative overflow-hidden p-4 sm:p-6 lg:p-8">
+            {/* Background Effects */}
             <div className="absolute top-0 left-0 w-full h-full bg-grid-gray-700/[0.2] z-0"></div>
             <div className="absolute inset-0 pointer-events-none bg-gray-900 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
             <div className="absolute top-[-20%] left-[-10%] w-[40%] h-[40%] bg-cyan-500/20 rounded-full filter blur-3xl animate-blob"></div>
@@ -119,6 +191,165 @@ const AdminDashboard = () => {
                             <div className="text-xs text-gray-500 mt-2">
                                 Last updated: {stats.last_updated ? new Date(stats.last_updated).toLocaleString() : '—'}
                             </div>
+                        </div>
+                    )}
+                </section>
+
+                {/* Image Steganography Testing Section */}
+                <section className="mb-10">
+                    <h2 className="text-xl font-semibold text-white mb-4">Image Steganography Testing</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        {/* Download Latest Image */}
+                        <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
+                            <h3 className="text-lg font-semibold text-cyan-300 mb-3">📥 Download Test Image</h3>
+                            <p className="text-gray-400 mb-4">
+                                Download the latest steganographic image from the database for testing purposes.
+                            </p>
+                            <button
+                                onClick={handleDownloadImage}
+                                disabled={imageDownloading}
+                                className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold px-6 py-2 rounded-lg transition-all duration-200 disabled:opacity-50"
+                            >
+                                {imageDownloading ? 'Downloading...' : 'Download Latest Image'}
+                            </button>
+                        </div>
+
+                        {/* Upload Image for Detection */}
+                        <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
+                            <h3 className="text-lg font-semibold text-green-300 mb-3">🔍 Detect Steganography</h3>
+                            <p className="text-gray-400 mb-4">
+                                Upload an image to detect hidden steganographic watermarks and identify the source company.
+                            </p>
+                            <label
+                                htmlFor="image-detect-upload"
+                                className="bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-2 rounded-lg cursor-pointer transition-all duration-200 inline-block"
+                            >
+                                {imageDetectLoading ? 'Analyzing...' : 'Upload Image'}
+                                <input
+                                    id="image-detect-upload"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleImageDetectUpload}
+                                    className="hidden"
+                                />
+                            </label>
+                        </div>
+                    </div>
+
+                    {/* Image Detection Error */}
+                    {imageDetectError && (
+                        <div className="mt-4 text-red-400">{imageDetectError}</div>
+                    )}
+
+                    {/* Image Detection Result */}
+                    {imageDetectResult && (
+                        <div className="mt-6 bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
+                            <h3 className="text-lg font-bold text-green-300 mb-4">🔍 Steganography Detection Results</h3>
+                            
+                            {/* Detection Summary */}
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                                <div className={`rounded-lg p-4 flex flex-col items-center ${
+                                    imageDetectResult.detection_result?.has_steganography 
+                                        ? 'bg-red-900/40 border border-red-500/50' 
+                                        : 'bg-green-900/40 border border-green-500/50'
+                                }`}>
+                                    <span className="text-2xl font-bold">
+                                        {imageDetectResult.detection_result?.has_steganography ? '⚠️' : '✅'}
+                                    </span>
+                                    <span className="text-sm mt-1 text-center">
+                                        {imageDetectResult.detection_result?.has_steganography ? 'Steganography Detected' : 'Clean Image'}
+                                    </span>
+                                </div>
+                                
+                                {imageDetectResult.detection_result?.extracted_company && (
+                                    <div className="bg-cyan-900/40 rounded-lg p-4 flex flex-col items-center">
+                                        <span className="text-xl font-bold text-cyan-400">
+                                            {imageDetectResult.detection_result.extracted_company}
+                                        </span>
+                                        <span className="text-gray-300 text-sm mt-1">Source Company</span>
+                                    </div>
+                                )}
+                                
+                                {imageDetectResult.detection_result?.confidence && (
+                                    <div className="bg-yellow-900/40 rounded-lg p-4 flex flex-col items-center">
+                                        <span className="text-xl font-bold text-yellow-400">
+                                            {imageDetectResult.detection_result.confidence}
+                                        </span>
+                                        <span className="text-gray-300 text-sm mt-1">Confidence</span>
+                                    </div>
+                                )}
+                                
+                                {imageDetectResult.detection_result?.image_analysis && (
+                                    <div className="bg-purple-900/40 rounded-lg p-4 flex flex-col items-center">
+                                        <span className="text-xl font-bold text-purple-400">
+                                            {imageDetectResult.detection_result.image_analysis.total_pixels?.toLocaleString()}
+                                        </span>
+                                        <span className="text-gray-300 text-sm mt-1">Total Pixels</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Image Analysis Details */}
+                            {imageDetectResult.detection_result?.image_analysis && (
+                                <div className="mb-6">
+                                    <h4 className="text-md font-semibold text-white mb-2">Image Analysis</h4>
+                                    <div className="bg-gray-900/60 rounded-lg p-4">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                            <div>
+                                                <span className="text-gray-400">Width:</span>
+                                                <span className="text-white ml-2">{imageDetectResult.detection_result.image_analysis.width}px</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-gray-400">Height:</span>
+                                                <span className="text-white ml-2">{imageDetectResult.detection_result.image_analysis.height}px</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-gray-400">Total Pixels:</span>
+                                                <span className="text-white ml-2">{imageDetectResult.detection_result.image_analysis.total_pixels?.toLocaleString()}</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-gray-400">Max Capacity:</span>
+                                                <span className="text-white ml-2">{imageDetectResult.detection_result.image_analysis.max_capacity?.toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Bait Information */}
+                            {imageDetectResult.bait_info && imageDetectResult.bait_info.found_in_database && (
+                                <div className="mb-6">
+                                    <h4 className="text-md font-semibold text-white mb-2">🎣 Bait Information</h4>
+                                    <div className="bg-red-900/40 border border-red-500/50 rounded-lg p-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                            <div>
+                                                <span className="text-gray-300">Original User:</span>
+                                                <span className="text-red-300 ml-2 font-mono">{imageDetectResult.bait_info.original_user}</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-gray-300">Shared With:</span>
+                                                <span className="text-red-300 ml-2 font-semibold">{imageDetectResult.bait_info.shared_with_company}</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-gray-300">Created Date:</span>
+                                                <span className="text-red-300 ml-2">{new Date(imageDetectResult.bait_info.created_date).toLocaleString()}</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-gray-300">Bait ID:</span>
+                                                <span className="text-red-300 ml-2 font-mono">{imageDetectResult.bait_info.bait_id}</span>
+                                            </div>
+                                        </div>
+                                        <div className="mt-4 p-3 bg-red-800/30 rounded border-l-4 border-red-500">
+                                            <p className="text-red-200 font-semibold">⚠️ LEAK DETECTED</p>
+                                            <p className="text-red-300 text-sm mt-1">
+                                                This image was originally shared with <strong>{imageDetectResult.bait_info.shared_with_company}</strong> 
+                                                and contains embedded watermarks. Its presence elsewhere indicates a potential data leak.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </section>
@@ -286,25 +517,23 @@ const AdminDashboard = () => {
                 <section className="mb-12">
                     <h2 className="text-xl font-semibold text-white mb-4">How Our Watermarking Works</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* Invisible Metadata */}
+                        {/* Steganographic Addressing */}
                         <div className="bg-gray-800/60 rounded-xl p-6 border border-cyan-700/30 flex flex-col items-center">
-                            <span className="text-3xl mb-2">🕵️‍♂️</span>
-                            <h4 className="font-bold text-cyan-300 mb-2">Invisible Metadata</h4>
+                            <span className="text-3xl mb-2">🏠</span>
+                            <h4 className="font-bold text-cyan-300 mb-2">Steganographic Addressing</h4>
                             <p className="text-gray-300 text-sm text-center">
-                                We embed unique, invisible codes inside the data objects—like a digital fingerprint. This metadata is hidden from normal view, but lets us trace leaks back to the source instantly.
+                                We embed company-specific location identifiers within address fields using geographically plausible block, sector, and unit codes. These appear as natural address components (e.g., <span className="text-cyan-200 font-mono">Block CR01</span>, <span className="text-cyan-200 font-mono">Sector PF03</span>) but serve as cryptographic breadcrumbs for source attribution.
                             </p>
                             <div className="mt-3 text-xs bg-gray-900/60 rounded p-2 text-cyan-400 font-mono">
-                                {'{ "user": "John", "balance": 10000, '}<br />
-                                <span className="text-gray-500">// ...</span><br />
-                                {'  "__wm": "a1b2c3d4e5f6g7h8" }'}
+                                {'"address_line2": "Near Central Park, Block CR01"'}
                             </div>
                         </div>
-                        {/* Steganography & String Tweaks */}
+                        {/* String Steganography */}
                         <div className="bg-gray-800/60 rounded-xl p-6 border border-purple-700/30 flex flex-col items-center">
                             <span className="text-3xl mb-2">🪄</span>
                             <h4 className="font-bold text-purple-300 mb-2">String Steganography</h4>
                             <p className="text-gray-300 text-sm text-center">
-                                We hide information using zero-width characters, strategic hyphens, and underscores in text fields. For example, <span className="text-purple-200 font-mono">TCS_Ltd_</span>, <span className="text-purple-200 font-mono">HDFC-Bank</span>, or even invisible marks. These tweaks are normalization-proof and survive most data processing.
+                                We hide information using zero-width characters, strategic hyphens, and underscores in text fields. For example, <span className="text-purple-200 font-mono">TCS_Ltd_</span>, <span className="text-purple-200 font-mono">HDFC-Bank</span>, or even invisible Unicode markers. These micro-modifications are normalization-resistant and survive most data processing.
                             </p>
                             <div className="mt-3 text-xs bg-gray-900/60 rounded p-2 text-purple-400 font-mono">
                                 {'"company": "TCS_Ltd_", "bank": "HDFC-Bank"'}
@@ -315,21 +544,21 @@ const AdminDashboard = () => {
                             <span className="text-3xl mb-2">🧮</span>
                             <h4 className="font-bold text-yellow-300 mb-2">Subtle Numeric & Date Tweaks</h4>
                             <p className="text-gray-300 text-sm text-center">
-                                We tweak float values by adding a tiny amount at the 5th decimal place (e.g. <span className="text-yellow-200 font-mono">1234.56001</span>), or manipulate date formats (e.g. <span className="text-yellow-200 font-mono">2025/07/06</span> vs <span className="text-yellow-200 font-mono">06-07-2025</span>). These changes are normalization-proof and survive most data processing.
+                                We inject sub-decimal signatures at the 5th decimal place in numerical fields (e.g. <span className="text-yellow-200 font-mono">1234.56001</span>) and apply temporal format manipulation to dates (e.g. <span className="text-yellow-200 font-mono">YYYY-DD-MM</span> vs <span className="text-yellow-200 font-mono">YYYY-MM-DD</span>). These micro-perturbations are statistically undetectable yet forensically recoverable.
                             </p>
                             <div className="mt-3 text-xs bg-gray-900/60 rounded p-2 text-yellow-400 font-mono">
-                                {'"balance": 1234.56001, "date": "2025/07/06"'}
+                                {'"balance": 1234.56001, "date": "2025-28-07"'}
                             </div>
                         </div>
                         {/* Normalization-Proofing */}
                         <div className="bg-gray-800/60 rounded-xl p-6 border border-green-700/30 flex flex-col items-center">
                             <span className="text-3xl mb-2">🛡️</span>
-                            <h4 className="font-bold text-green-300 mb-2">Normalization-Proof Watermarks</h4>
+                            <h4 className="font-bold text-green-300 mb-2">Resilient Watermarking</h4>
                             <p className="text-gray-300 text-sm text-center">
-                                Our techniques are designed to survive data cleaning, reformatting, and even partial edits. Whether it’s a float tweak, a hidden character, or a date format, the watermark remains detectable.
+                                Our multi-layer approach ensures watermark persistence through data cleaning, reformatting, and partial modifications. Each technique is engineered to withstand common data transformation pipelines while maintaining attribution integrity.
                             </p>
                         <div className="mt-3 text-xs bg-gray-900/60 rounded p-2 text-green-400 font-mono">
-                            {'"salary": 50000.00003, "company": "TCS_Ltd_"'}<br />
+                            {'"salary": 50000.00003, "location": "MG-Road, Unit TC01"'}<br />
                             <span className="text-gray-500">// survives normalization</span>
                         </div>
                     </div>
@@ -338,17 +567,31 @@ const AdminDashboard = () => {
                         <span className="text-3xl mb-2">🔑</span>
                         <h4 className="font-bold text-blue-300 mb-2">Cryptographic Fingerprinting</h4>
                         <p className="text-gray-300 text-sm text-center">
-                            We generate a unique <span className="text-blue-200 font-mono">watermarkSeed</span> using SHA-256 and embed a <span className="text-blue-200 font-mono">fingerprintCode</span> in the data. This makes every leak traceable and tamper-evident.
+                            We generate unique <span className="text-blue-200 font-mono">watermarkSeeds</span> using SHA-256 entropy and embed deterministic <span className="text-blue-200 font-mono">fingerprintCodes</span> throughout the dataset. This creates an immutable provenance chain that enables precise leak source identification and tamper detection.
                         </p>
                         <div className="mt-3 text-xs bg-gray-900/60 rounded p-2 text-blue-400 font-mono">
                             {'"watermarkSeed": "168f4ba4-f940-4e54-9c53-5555bab28aac"'}<br />
-                            {'"fingerprintCode": "111101001000101010001101000001011010"'}
+                            {'"fingerprintCode": "111101001000101010001101000001011010"'
+}
+                        </div>
+                    </div>
+
+                    {/* Image Steganography */}
+                    <div className="bg-gray-800/60 rounded-xl p-6 border border-pink-700/30 flex flex-col items-center">
+                        <span className="text-3xl mb-2">🖼️</span>
+                        <h4 className="font-bold text-pink-300 mb-2">Image Steganography</h4>
+                        <p className="text-gray-300 text-sm text-center">
+                            We embed company identifiers directly into image pixels using LSB (Least Significant Bit) manipulation. The watermarks are invisible to the human eye but can be extracted to identify the source. This technique survives image compression and format conversion.
+                        </p>
+                        <div className="mt-3 text-xs bg-gray-900/60 rounded p-2 text-pink-400 font-mono">
+                            {'RGB(255,254,253) → RGB(255,254,252)'}<br />
+                            <span className="text-gray-500">// company: "creder"</span>
                         </div>
                     </div>
             </div>
             <div className="mt-8 text-center text-gray-400 text-base">
-                <span className="font-semibold text-cyan-400">We hide our marks in plain sight—</span>
-                using a blend of invisible metadata, steganography, cryptographic fingerprints, and subtle data tweaks. Even if the data is copied, normalized, or leaked, our system can <span className="text-green-400 font-semibold">trace it back</span>—no matter where it goes.
+                <span className="font-semibold text-cyan-400">We embed intelligence in plain sight—</span>
+                using steganographic addressing, linguistic manipulation, precision fingerprinting, image watermarking, and cryptographic attribution. Even when data is copied, normalized, or leaked across multiple vectors, our multi-modal watermarking system can <span className="text-green-400 font-semibold">precisely identify the source</span>—no matter the transformation.
             </div>
         </section>
 
