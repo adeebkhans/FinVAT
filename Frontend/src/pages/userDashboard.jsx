@@ -237,10 +237,11 @@ const UserDashboard = () => {
               color="bg-green-500 animate-pulse" 
             />
             <QuickActionCard
-              icon={<CreditCardIcon className="w-6 h-6 text-white" />}
-              title="Apply Loan"
-              subtitle="Personal & business loans"
-              color="bg-blue-500"
+              icon={<DocumentTextIcon className="w-6 h-6 text-white" />}
+              title="Document Verification"
+              subtitle="Verify ID with Onfido"
+              onClick={() => navigate('/onfido')}
+              color="bg-blue-500 animate-pulse"
             />
             <QuickActionCard
               icon={<TrendingUpIcon className="w-6 h-6 text-white" />}
