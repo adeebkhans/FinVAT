@@ -84,6 +84,31 @@ export const steganographyAPI = {
   // Detect fingerprint in data
   detectFingerprint: (suspectData) => {
     return api.post('/steganography/detect', suspectData);
+  },
+
+  // Image steganography - Onfido simulation
+  onfidoVerification: (formData) => {
+    return api.post('/steganography/imagestegonography', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  // Detect image steganography
+  detectImageSteganography: (formData) => {
+    return api.post('/steganography/detectimage', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  // Download random image 
+  getLatestImage: () => {
+    return api.get(`/steganography/downloadimage`, {
+      responseType: 'blob',
+    });
   }
 };
 
