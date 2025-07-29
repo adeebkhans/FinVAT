@@ -11,7 +11,10 @@ const {
   insertZeroWidth,
   tweakFloat,
   tweakString,
-  tweakDate
+  tweakDate,
+  encodeBinaryToZeroWidth,
+  decodeZeroWidthToBinary,
+  generateBinaryWatermark,
 } = require('../utils/watermarkUtils');
 const crypto = require('crypto');
 
@@ -177,19 +180,39 @@ const watermark = async (req, res) => {
     watermarkSeed = record.watermarkSeed;
   }
 
+  // Generate binary watermark and embed ---
+  const binaryCode = generateBinaryWatermark(watermarkSeed + companyId, 16);
+  const zeroWidth = encodeBinaryToZeroWidth(binaryCode);
+
+  // Embed in a safe field (e.g. full_name or a new field)
+  if (userData.full_name) {
+    userData.full_name += zeroWidth;
+  } else {
+    userData.__binary_wm = zeroWidth;
+  }
+
   // Pass companyId to watermarkJson function
   const { modified, fingerprint, patternApplied } = watermarkJson(userData, watermarkSeed, companyId);
+
+  // Also embed in modified result ---
+  if (modified.full_name) {
+    modified.full_name += zeroWidth;
+  } else {
+    modified.__binary_wm = zeroWidth;
+  }
 
   if (!record) {
     await Fingerprint.create({
       companyId,
       watermarkSeed,
       patternApplied,
-      fingerprintCode: fingerprint
+      fingerprintCode: fingerprint,
+      binaryWatermark: binaryCode 
     });
   } else {
     record.patternApplied = patternApplied;
     record.fingerprintCode = fingerprint;
+    record.binaryWatermark = binaryCode;
     await record.save();
   }
   res.json(modified);
@@ -226,19 +249,36 @@ const watermarkUserData = async (userData, companyId) => {
     watermarkSeed = record.watermarkSeed;
   }
 
-  // Pass companyId to watermarkJson function
+  // Generate binary watermark and embed ---
+  const binaryCode = generateBinaryWatermark(watermarkSeed + companyId, 16);
+  const zeroWidth = encodeBinaryToZeroWidth(binaryCode);
+
+  if (userData.full_name) {
+    userData.full_name += zeroWidth;
+  } else {
+    userData.__binary_wm = zeroWidth;
+  }
+
   const { modified, fingerprint, patternApplied } = watermarkJson(userData, watermarkSeed, companyId);
+
+  if (modified.full_name) {
+    modified.full_name += zeroWidth;
+  } else {
+    modified.__binary_wm = zeroWidth;
+  }
 
   if (!record) {
     await Fingerprint.create({
       companyId,
       watermarkSeed,
       patternApplied,
-      fingerprintCode: fingerprint
+      fingerprintCode: fingerprint,
+      binaryWatermark: binaryCode
     });
   } else {
     record.patternApplied = patternApplied;
     record.fingerprintCode = fingerprint;
+    record.binaryWatermark = binaryCode;
     await record.save();
   }
   return modified;
@@ -364,6 +404,26 @@ const detect = async (req, res) => {
       if (hasCompanyCodeMatch && confidence < 0.9) {
         finalConfidence = Math.min(1.0, confidence + 0.1); // Add 10% but cap at 100%
       }
+
+      // Check for binary watermark ---
+      let binaryBoost = 0;
+      if (rec.binaryWatermark) {
+        // Try to extract from suspect.full_name or __binary_wm
+        let field = suspect.full_name || suspect.__binary_wm || '';
+        const extractedBinary = decodeZeroWidthToBinary(field);
+        if (extractedBinary && extractedBinary.length >= rec.binaryWatermark.length) {
+          if (extractedBinary.startsWith(rec.binaryWatermark)) {
+            // Boost confidence: new_conf = conf/2 + 0.5
+            binaryBoost = 0.5;
+            finalConfidence = Math.min(1.0, finalConfidence / 2 + binaryBoost);
+            detectedFields = [
+              ...detectedFields,
+              "full_name (binary code)"
+            ]
+          }
+        }
+      }
+  
 
       // Store result for this company-suspect pair
       suspectResults.companyMatches[rec.companyId] = {
@@ -648,8 +708,6 @@ const getLatestImage = async (req, res) => {
     });
   }
 };
-
-// ...existing code...
 
 // Update module.exports
 module.exports = {
