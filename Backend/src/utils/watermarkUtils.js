@@ -259,6 +259,28 @@ function detectWatermark(suspectJson, referenceJson, manipulations, seed) {
   return { detected, matchedFields };
 }
 
+// Encode binary string as zero-width chars
+function encodeBinaryToZeroWidth(binary) {
+  return binary.replace(/0/g, '\u200B').replace(/1/g, '\u200C');
+}
+
+// Decode zero-width chars to binary string
+function decodeZeroWidthToBinary(str) {
+  return str.replace(/[^\u200B\u200C]/g, '')
+            .replace(/\u200B/g, '0')
+            .replace(/\u200C/g, '1');
+}
+
+// Generate deterministic binary code for a company/seed
+function generateBinaryWatermark(seed, length = 16) {
+  const hash = crypto.createHash('sha256').update(seed).digest('hex');
+  let binary = '';
+  for (let i = 0; i < length; i++) {
+    binary += (parseInt(hash[i], 16) % 2).toString();
+  }
+  return binary;
+}
+
 module.exports = {
   insertZeroWidth,
   tweakFloat,
@@ -268,4 +290,7 @@ module.exports = {
   watermarkJson,
   detectWatermark,
   manipulations,
+  encodeBinaryToZeroWidth,
+  decodeZeroWidthToBinary,
+  generateBinaryWatermark,
 };
